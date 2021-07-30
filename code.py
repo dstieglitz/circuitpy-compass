@@ -50,11 +50,12 @@ ERROR=0xfd1800
 
 def msg(text, color=MESSAGE):
     heading_label = label.Label(font, text=text, color=color, scale=1)
-    heading_label.anchor_point = (0.5, 0.5)    
+    heading_label.anchor_point = (0.5, 0.5)
     heading_label.anchored_position = (DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2)
     display.show(heading_label);
-    
+
 msg("Loading...",color=MESSAGE)
+
 
 def string_width(text, font):
     w = 0
@@ -106,17 +107,17 @@ def create_group(text, visible_degrees=30, scale=4, color=0xFFFFFF):
 
 group_data = [
     ("N", 4),
-    ("330", 2),
-    ("300", 2),
-    ("E", 4),
-    ("240", 2),
-    ("210", 2),
-    ("S", 4),
-    ("150", 2),
-    ("120", 2),
-    ("E", 4),
-    ("60", 2),
     ("30", 2),
+    ("60", 2),
+    ("E", 4),
+    ("120", 2),
+    ("150", 2),
+    ("S", 4),
+    ("210", 2),
+    ("240", 2),
+    ("E", 4),
+    ("300", 2),
+    ("330", 2),
 ]
 
 groups = []
@@ -127,44 +128,56 @@ groups = []
 for i, g in enumerate(group_data):
     g_ = create_group(g[0], scale=g[1])
     groups.append(g_)
-    
+
+compass = displayio.Group()
 
 # Simulate the supplied compass heading
-def heading(degrees):
-    compass = displayio.Group()
-    #compass.y = int(DISPLAY_HEIGHT / 2 - 20)
-    index = int((360-degrees) / 30) + 1
-    print(index)
+def heading(degrees, compass=compass):
+    # clear the existing configuration
+    t = len(compass)
+    for i in range(0,t):
+        compass.pop()
+        
+    #print("after clearing="+str(len(compass)))
+    # find the index of the group that contains the desired heading
+    index = int(degrees / 30)
+    #print("index="+str(index))
+    
+    # find the heading that will be shown if we draw the groups starting at 0
     midpoint = index * 30 + 15
-    print(midpoint)
-    x = int((-midpoint+degrees)*ppd)
-    print(x)
+    #print(midpoint)
+    
+    # calculate the number of pixels we need to move the groups to show the
+    # correct heading
+    offset = int((degrees-midpoint)*ppd)
+    #print("offset="+str(offset))
+    
     compass.x = 0
+    x = offset
+    
     if degrees < 0 or degrees > 359:
         msg("Bad Heading",color=ERROR)
     else:
-
         i = index-2
         if i < 0:
-            i = len(groups) - i
-        for j in range(4):
-            if i == len(groups):
-                i = 0
-            g_ = groups[i+j]
-            g_.x = x 
+            i = len(groups) + i
+        for l in range(i,i+4):
+            if l >= len(groups):
+                l = l - len(groups) 
+            #print("l="+str(l))
+            g_ = groups[l]
+            g_.x = x
             compass.append(g_)
             x = x + int(30 * ppd)
-    
 
-#    compass.x = compass.x + int(offset * ppd)
     compass.append(Line(int(DISPLAY_WIDTH / 2),0,int(DISPLAY_WIDTH / 2),DISPLAY_HEIGHT,0xaaaaaa))
-    compass.y = compass.y - 30
-    return compass
 
-display.show(heading(225))
+compass.y = compass.y - 30
+display.show(compass)
+#display.show(heading(89))
 
 while True:
     pass
-#    for i in range(0 - 100, DISPLAY_WIDTH + 100):
-#        compass.x = i
-#        time.sleep(0.001)
+    for i in range(89,270):
+        heading(i)
+        time.sleep(0.0001)
