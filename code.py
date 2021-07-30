@@ -153,7 +153,7 @@ def heading(degrees, compass=compass):
     #print("offset="+str(offset))
     
     compass.x = 0
-    x = offset
+    x = -offset
     
     if degrees < 0 or degrees > 359:
         msg("Bad Heading",color=ERROR)
@@ -171,13 +171,17 @@ def heading(degrees, compass=compass):
             x = x + int(30 * ppd)
 
     compass.append(Line(int(DISPLAY_WIDTH / 2),0,int(DISPLAY_WIDTH / 2),DISPLAY_HEIGHT,0xaaaaaa))
-
+    cts = label.Label(font, text=str(degrees), color=color, scale=1)
+    cts.anchor_point = (0.5, 0.5)
+    cts.anchored_position = (DISPLAY_WIDTH / 2, 50)
+    compass.append(cts)
+    
 compass.y = compass.y - 30
 display.show(compass)
 #display.show(heading(89))
 
 while True:
     pass
-    for i in range(89,270):
+    for i in range(0,359):
         heading(i)
-        time.sleep(0.0001)
+        time.sleep(0.1)
