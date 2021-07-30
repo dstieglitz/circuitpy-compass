@@ -133,31 +133,35 @@ for i, g in enumerate(group_data):
 def heading(degrees):
     compass = displayio.Group()
     #compass.y = int(DISPLAY_HEIGHT / 2 - 20)
-    x = 0
+    index = int((360-degrees) / 30) + 1
+    print(index)
+    midpoint = index * 30 + 15
+    print(midpoint)
+    x = int((-midpoint+degrees)*ppd)
+    print(x)
     compass.x = 0
     if degrees < 0 or degrees > 359:
         msg("Bad Heading",color=ERROR)
     else:
-        index = int((360-degrees) / 30) 
-        i = index-1
+
+        i = index-2
         if i < 0:
             i = len(groups) - i
-        for j in range(3):
+        for j in range(4):
             if i == len(groups):
                 i = 0
             g_ = groups[i+j]
-            g_.x = x
+            g_.x = x 
             compass.append(g_)
             x = x + int(30 * ppd)
     
-    offset = int((30*index) * ppd) - degrees
-    print(offset)
-    compass.x = compass.x + offset
+
+#    compass.x = compass.x + int(offset * ppd)
     compass.append(Line(int(DISPLAY_WIDTH / 2),0,int(DISPLAY_WIDTH / 2),DISPLAY_HEIGHT,0xaaaaaa))
     compass.y = compass.y - 30
     return compass
 
-display.show(heading(187))
+display.show(heading(225))
 
 while True:
     pass
