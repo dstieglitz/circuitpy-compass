@@ -153,7 +153,7 @@ def heading(degrees, compass=compass):
     #print("offset="+str(offset))
     
     compass.x = 0
-    x = -offset
+    x = -offset-int(30*ppd)
     
     if degrees < 0 or degrees > 359:
         msg("Bad Heading",color=ERROR)
@@ -161,7 +161,7 @@ def heading(degrees, compass=compass):
         i = index-2
         if i < 0:
             i = len(groups) + i
-        for l in range(i,i+4):
+        for l in range(i,i+5):
             if l >= len(groups):
                 l = l - len(groups) 
             #print("l="+str(l))
@@ -178,7 +178,8 @@ def heading(degrees, compass=compass):
     
 compass.y = compass.y - 30
 display.show(compass)
-#display.show(heading(89))
+
+heading(89)
 
 while True:
     pass
