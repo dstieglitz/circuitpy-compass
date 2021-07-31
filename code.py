@@ -1,6 +1,6 @@
 # This application renders a simulated magnetic compass on an embedded display. The input is a single
 # integer indicating what heading to display in the range (0,359).
-# import usb_cdc
+import usb_cdc
 from adafruit_gizmo import tft_gizmo
 import time
 from adafruit_display_shapes.rect import Rect
@@ -12,11 +12,8 @@ import displayio
 # https://learn.adafruit.com/circuitpython-display-support-using-displayio/display-and-display-bus
 display = tft_gizmo.TFT_Gizmo()
 
-# uart = usb_cdc.data
-# print(uart.connected)
-
-# while True:
-#    print(uart.readline())
+uart = usb_cdc.data
+#print(uart.connected)
 
 DISPLAY_WIDTH = 240
 DISPLAY_HEIGHT = 240
@@ -137,24 +134,24 @@ def heading(degrees, compass=compass):
     t = len(compass)
     for i in range(0,t):
         compass.pop()
-        
+
     #print("after clearing="+str(len(compass)))
     # find the index of the group that contains the desired heading
     index = int(degrees / 30)
     #print("index="+str(index))
-    
+
     # find the heading that will be shown if we draw the groups starting at 0
     midpoint = index * 30 + 15
     #print(midpoint)
-    
+
     # calculate the number of pixels we need to move the groups to show the
     # correct heading
     offset = int((degrees-midpoint)*ppd)
     #print("offset="+str(offset))
-    
+
     compass.x = 0
     x = -offset-int(30*ppd)
-    
+
     if degrees < 0 or degrees > 359:
         msg("Bad Heading",color=ERROR)
     else:
@@ -163,7 +160,7 @@ def heading(degrees, compass=compass):
             i = len(groups) + i
         for l in range(i,i+5):
             if l >= len(groups):
-                l = l - len(groups) 
+                l = l - len(groups)
             #print("l="+str(l))
             g_ = groups[l]
             g_.x = x
@@ -175,14 +172,25 @@ def heading(degrees, compass=compass):
     cts.anchor_point = (0.5, 0.5)
     cts.anchored_position = (DISPLAY_WIDTH / 2, 50)
     compass.append(cts)
-    
+
 compass.y = compass.y - 30
 display.show(compass)
 
-heading(89)
+heading(0)
 
 while True:
-    pass
-    for i in range(0,359):
-        heading(i)
-        time.sleep(0.1)
+    try:
+        data = uart.readline()
+        p = data.split()
+        print(str(p))
+        key = p[0]
+        val = p[1]
+        if key==b'HDG':
+            heading(int(p[1]))
+        
+    #    for i in range(0,359):
+    #        heading(i)
+    #        time.sleep(0.1)
+    except Exception as e:
+        pass
+        #msg(str(e),color=ERROR)
