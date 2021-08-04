@@ -1,11 +1,14 @@
 # This application renders a simulated magnetic compass on an embedded display. The input is a single
 # integer indicating what heading to display in the range (0,359).
 import usb_cdc
-from adafruit_gizmo import tft_gizmo
+import displayio
+import board
 import time
+from adafruit_gizmo import tft_gizmo
 from adafruit_display_shapes.rect import Rect
 from adafruit_display_shapes.line import Line
-import displayio
+from adafruit_display_text import label
+from adafruit_bitmap_font import bitmap_font
 
 # use built in display (MagTag, PyPortal, PyGamer, PyBadge, CLUE, etc.)
 # see guide for setting up external displays (TFT / OLED breakouts, RGB matrices, etc.)
@@ -17,10 +20,6 @@ uart = usb_cdc.data
 
 DISPLAY_WIDTH = 240
 DISPLAY_HEIGHT = 240
-
-import board
-from adafruit_display_text import label
-from adafruit_bitmap_font import bitmap_font
 
 # try uncommenting different font files if you like
 font_file = "/Helvetica-Bold-16.bdf"
@@ -34,6 +33,7 @@ color = 0xFFFFFF
 
 # How many degrees are visible on the display
 tot_visible_degrees = 90
+# pixels per degree heading
 ppd = DISPLAY_WIDTH / tot_visible_degrees
 tick_pad = 40
 tick_30_height = 40
@@ -112,12 +112,29 @@ group_data = [
     ("S", 4),
     ("210", 2),
     ("240", 2),
-    ("E", 4),
+    ("W", 4),
     ("300", 2),
     ("330", 2),
 ]
+group_data.reverse()
 
 groups = []
+
+# Helper method to wrap index calculations around the length of the array
+def circ_index(idx, tot=len(group_data)):
+    if idx >= tot:
+        return idx - tot
+    elif idx < 0:
+        return tot + idx + 1
+    else:
+        return idx
+
+# Convert degrees to the group index
+def to_index(degrees):
+    return int((360-degrees) / 30) - 1
+
+def to_degrees(index):
+    return 360 - (circ_index(index+1) * 30) 
 
 #
 # Create tiles
@@ -137,31 +154,36 @@ def heading(degrees, compass=compass):
 
     #print("after clearing="+str(len(compass)))
     # find the index of the group that contains the desired heading
-    index = int(degrees / 30)
-    #print("index="+str(index))
+    index = to_index(degrees)
+    # print("index="+str(index))
 
-    # find the heading that will be shown if we draw the groups starting at 0
-    midpoint = index * 30 + 15
-    #print(midpoint)
-
+    left=to_degrees(index-2)
+    # print("left="+str(left))
+    midpoint=left-int(tot_visible_degrees/2)
+    if midpoint < 0:
+        midpoint = 360 + midpoint
+    # print("midpoint="+str(midpoint))
+    right=midpoint-int(tot_visible_degrees/2)
+    if right < 0:
+        right = 360 + right
+    # print("right="+str(right))
+        
     # calculate the number of pixels we need to move the groups to show the
     # correct heading
     offset = int((degrees-midpoint)*ppd)
-    #print("offset="+str(offset))
+    # print("offset="+str(offset))
 
     compass.x = 0
-    x = -offset-int(30*ppd)
+    x = offset
 
     if degrees < 0 or degrees > 359:
         msg("Bad Heading",color=ERROR)
     else:
-        i = index-2
-        if i < 0:
-            i = len(groups) + i
-        for l in range(i,i+5):
-            if l >= len(groups):
-                l = l - len(groups)
-            #print("l="+str(l))
+        i = circ_index(index-2)
+        # print("i="+str(i))
+        for n in range(5):
+            l = circ_index(i+n,len(groups))
+            # print("l="+str(l)+" at "+str(x))
             g_ = groups[l]
             g_.x = x
             compass.append(g_)
@@ -176,9 +198,14 @@ def heading(degrees, compass=compass):
 compass.y = compass.y - 30
 display.show(compass)
 
-heading(0)
+heading(187)
 
-while True:
+def test_loop():
+    for i in range(0,359):
+        heading(i)
+        time.sleep(0.1)
+
+def main_loop():
     try:
         data = uart.readline()
         p = data.split()
@@ -187,10 +214,10 @@ while True:
         val = p[1]
         if key==b'HDG':
             heading(int(p[1]))
-        
-    #    for i in range(0,359):
-    #        heading(i)
-    #        time.sleep(0.1)
     except Exception as e:
         pass
         #msg(str(e),color=ERROR)
+
+while True:
+    pass
+    test_loop()
