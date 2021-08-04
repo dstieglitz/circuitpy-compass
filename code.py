@@ -134,7 +134,7 @@ def to_index(degrees):
     return int((360-degrees) / 30) - 1
 
 def to_degrees(index):
-    return 360 - (circ_index(index+1) * 30) 
+    return 360 - (circ_index(index + 1) * 30)
 
 #
 # Create tiles
@@ -157,7 +157,7 @@ def heading(degrees, compass=compass):
     index = to_index(degrees)
     # print("index="+str(index))
 
-    left=to_degrees(index-2)
+    left=to_degrees(circ_index(index-2))
     # print("left="+str(left))
     midpoint=left-int(tot_visible_degrees/2)
     if midpoint < 0:
@@ -167,7 +167,7 @@ def heading(degrees, compass=compass):
     if right < 0:
         right = 360 + right
     # print("right="+str(right))
-        
+
     # calculate the number of pixels we need to move the groups to show the
     # correct heading
     offset = int((degrees-midpoint)*ppd)
@@ -193,12 +193,12 @@ def heading(degrees, compass=compass):
     cts = label.Label(font, text=str(degrees), color=color, scale=1)
     cts.anchor_point = (0.5, 0.5)
     cts.anchored_position = (DISPLAY_WIDTH / 2, 50)
-    compass.append(cts)
+    # compass.append(cts)
 
 compass.y = compass.y - 30
 display.show(compass)
 
-heading(187)
+heading(0)
 
 def test_loop():
     for i in range(0,359):
@@ -219,5 +219,6 @@ def main_loop():
         #msg(str(e),color=ERROR)
 
 while True:
-    pass
-    test_loop()
+    main_loop()
+#    pass
+#    test_loop()
