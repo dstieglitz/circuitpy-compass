@@ -121,7 +121,7 @@ def create_group(text, visible_degrees=30, scale=4, color=0xFFFFFF):
             group.append(rect)
     return group
 
-
+compass = displayio.Group()
 group_data = [
     ("N", 4),
     ("3", 2),
@@ -138,14 +138,12 @@ group_data = [
 ]
 group_data.reverse()
 
-groups = []
-
 # Helper method to wrap index calculations around the length of the array
 def circ_index(idx, tot=len(group_data)):
-    if idx >= tot:
+    if idx >= tot - 1:
         return idx - tot
     elif idx < 0:
-        return tot + idx + 1
+        return tot + idx
     else:
         return idx
 
@@ -159,86 +157,115 @@ def to_degrees(index):
 #
 # Create tiles
 #
-for i, g in enumerate(group_data):
+x=0
+left=330
+pad=2
+pad_px = -int((30*pad) *ppd)
+# adjust for extra groups and alignment
+compass.x = pad_px
+#for i, g in enumerate(group_data):
+# cap the ends with an extra couple of groups to simulate a round compass
+for i in range(-pad,len(group_data)+pad):
+    #print(i)
+    #print(circ_index(i))
+    g = group_data[circ_index(i)]
     g_ = create_group(g[0], scale=g[1])
-    groups.append(g_)
+    g_.x = x
+    compass.append(g_)
+    x = x + int(30 * ppd)
 
-compass = displayio.Group()
+updating = False
 
 # Simulate the supplied compass heading
 def heading(degrees, compass=compass):
+    if degrees < 0 or degrees > 359:
+        msg("Bad Heading",color=ERROR)
+        
+    global updating
+    global left
+    updating = True
     # clear the existing configuration
-    t = len(compass)
-    for i in range(0,t):
-        compass.pop()
+#    t = len(compass)
+#    for i in range(0,t):
+#        compass.pop()
 
     #print("after clearing="+str(len(compass)))
     # find the index of the group that contains the desired heading
     index = to_index(degrees)
-    # print("index="+str(index))
+    #print("index="+str(index))
 
-    left=to_degrees(circ_index(index-2))
-    # print("left="+str(left))
+    #left=to_degrees(circ_index(index-2))
+    #print("left="+str(left))
     midpoint=left-int(tot_visible_degrees/2)
     if midpoint < 0:
         midpoint = 360 + midpoint
-    # print("midpoint="+str(midpoint))
+    #print("midpoint="+str(midpoint))
     right=midpoint-int(tot_visible_degrees/2)
     if right < 0:
         right = 360 + right
-    # print("right="+str(right))
+    #print("right="+str(right))
 
     # calculate the number of pixels we need to move the groups to show the
     # correct heading
     offset = int((degrees-midpoint)*ppd)
     # print("offset="+str(offset))
 
-    compass.x = 0
-    x = offset
+    compass.x = offset + pad_px
+    
+#    x = offset
 
-    if degrees < 0 or degrees > 359:
-        msg("Bad Heading",color=ERROR)
-    else:
-        i = circ_index(index-2)
-        # print("i="+str(i))
-        for n in range(5):
-            l = circ_index(i+n,len(groups))
-            # print("l="+str(l)+" at "+str(x))
-            g_ = groups[l]
-            g_.x = x
-            compass.append(g_)
-            x = x + int(30 * ppd)
+#    else:
+#        i = circ_index(index-2)
+#        # print("i="+str(i))
+#        for n in range(5):
+#            l = circ_index(i+n,len(compass))
+#            # print("l="+str(l)+" at "+str(x))
+#            #g_ = groups[l]
+#            #g_.x = x
+#            #compass.append(g_)
+#            #x = x + int(30 * ppd)
 
-    compass.append(Line(int(DISPLAY_WIDTH / 2),0,int(DISPLAY_WIDTH / 2),DISPLAY_HEIGHT,0xaaaaaa))
-    cts = label.Label(font, text=str(degrees), color=color, scale=1)
-    cts.anchor_point = (0.5, 0.5)
-    cts.anchored_position = (DISPLAY_WIDTH / 2, 50)
-    # compass.append(cts)
+#    compass.append(Line(int(DISPLAY_WIDTH / 2),0,int(DISPLAY_WIDTH / 2),DISPLAY_HEIGHT,0xaaaaaa))
+#    cts = label.Label(font, text=str(degrees), color=color, scale=1)
+#    cts.anchor_point = (0.5, 0.5)
+#    cts.anchored_position = (DISPLAY_WIDTH / 2, 50)
+#    # compass.append(cts)
+    updating = False
 
 compass.y = compass.y - 30
 display.show(compass)
 
-heading(0)
+cur_head = 0
+heading(127)
 
 def test_loop():
     for i in range(0,359):
         heading(i)
-        time.sleep(0.1)
+        time.sleep(0.001)
 
 def main_loop():
+    i = 0
+    global cur_head
+    global updating
     try:
         data = uart.readline()
         p = data.split()
-        print(str(p))
         key = p[0]
-        val = p[1]
-        if key==b'HDG':
-            heading(int(p[1]))
+        #print(key)
+        val = int(p[1])
+        print(str(val))
+        i = i + 1
+        if key == b'HDG':
+            if not updating:
+                print("updating to "+str(val))
+                cur_head = val
+                heading(cur_head)
     except Exception as e:
         pass
         #msg(str(e),color=ERROR)
 
 while True:
     main_loop()
-#    pass
+    pass
 #    test_loop()
+
